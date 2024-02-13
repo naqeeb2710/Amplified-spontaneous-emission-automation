@@ -497,7 +497,7 @@ class App:
                 self.root.after(2, self.root.update())
             
         except Exception as e:
-            print(f"An error occurred: {e}")
+            # print(f"An error occurred: {e}")
             self.liveSpec.close()
             # self.motor_controller.close_motor()
             # self.liveSpec.close_plot()
@@ -508,8 +508,11 @@ class App:
         exposure_time_entry_value = self.exposure_time_entry.get()
         exposure_time_mili = float(exposure_time_entry_value)
         exposure_time_micros = exposure_time_mili * 1000.0
+        current_angle = int(self.motor_controller.inst.position())
+        experiment_name = self.experiment_name_entry.get()
+        experiment_name = experiment_name + "_" + str(current_angle) + "deg"
 
-        self.liveSpec.save_live_spectrum(exposure_time_micros)
+        self.liveSpec.save_live_spectrum(exposure_time_micros,experiment_name)
 
 
     def quit_application(self):
