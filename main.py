@@ -56,7 +56,7 @@ class SpectrometerController:
         output_csv_filepath = os.path.join(data_folder, output_csv_filename)
         with open(output_csv_filepath, 'w', newline='') as csvfile:
             csv_writer = csv.writer(csvfile)
-            header = ['Wavelength (nm'] + [f'Intensity AC {i + 1}' for i in range(num_accumulations)]
+            header = ['Wavelength (nm)'] + [f'Intensity AC {i + 1}' for i in range(num_accumulations)]
             csv_writer.writerow(header)
 
             for row in zip(wavelengths, *intensities):
@@ -315,7 +315,7 @@ class MeasurementController:
             # Update the class variable
             MeasurementController.current_angle = current_angle_normalized
 
-            self.current_csv_filename = f'{self.experiment_name}_angle_{int(current_angle_normalized)}_intTime_{int(exposure_time_micros/1000.0)}_acc_{num_accumulations}.csv'
+            self.current_csv_filename = f'{self.experiment_name}_spec_{int(current_angle_normalized)}deg_{int(exposure_time_micros/1000.0)}ms_acc_{num_accumulations}.csv'
             self.spectrometer_controller.perform_accumulation(num_accumulations, exposure_time_micros, self.current_csv_filename,save_dir)
             
             current_angle += step_size
