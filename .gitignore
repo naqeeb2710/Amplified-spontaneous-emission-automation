@@ -2,4 +2,4 @@
 __pycache__/
 
 #ignore experiment results
-/experiment_data/
+experiment_data/
