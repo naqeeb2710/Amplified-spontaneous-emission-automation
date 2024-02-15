@@ -303,6 +303,7 @@ class App:
                 # Go Home if the checkbox is checked\
                 
                 self.motor_controller.move_to_angle(0)
+                print(">>>Moved to 0 Deg")
             self.spectrometer_controller.disconnect_spectrometer()
 
         except Exception as e:
@@ -367,6 +368,8 @@ class App:
                                 if event[2] == 1:  # Check if data indicates status change
                                     status_counter += 1
                                     print('status counter = ', status_counter)
+                                    if status_counter > measurement_controller.threshold_status_count:
+                                        break
                 else:
                     print("No power data recorded.")
                 
@@ -376,11 +379,11 @@ class App:
                     measurement_controller.power_meter.measurement_range = measurement_range
                     status_counter = 0  # Reset status counter after changing the range
                     measurement_controller.power_meter.connect()
-                    measurement_controller.power_meter.arm()
+                    measurement_controller.power_meter.arm(delay_seconds=power_delay)
                     power_data, average_power = measurement_controller.power_meter.disarm()
                     if power_data:
                         print("Power data recorded:")
-                        power_meter_filename = os.path.join(save_dir, f'{experiment_name}_power_{angle}deg.csv')
+                        power_meter_filename = os.path.join(save_dir, f'{experiment_name}_power_{int(angle)}deg.csv')
                         with open(power_meter_filename, 'w') as power_dump:
                             # Write header
                             power_dump.write('time, power, status\n')
@@ -408,7 +411,7 @@ class App:
                 csv_writer.writerow(header)
                 for row in angle_power_list:
                     csv_writer.writerow(row)
-            print(">>>Angle vs plot data")
+            print(">>>Angle vs Power data saved")
 
             self.spectrometer_controller.disconnect_spectrometer()
             angles, powers = zip(*angle_power_list)
@@ -420,7 +423,7 @@ class App:
             #save plot in experiment_data folder
             plot_filename = os.path.join(save_dir, f'{experiment_name}_angle_power.png')
             plt.savefig(plot_filename, bbox_inches='tight', pad_inches=0.5)
-            print(">>>plot saved")
+            print(">>>Angle vs Power plot saved")
             # plt.savefig(f'/{experiment_name}_angle_power.png', bbox_inches='tight', pad_inches=0.5)
 
             # Display the latest graph in the Tkinter application
@@ -438,7 +441,7 @@ class App:
             if self.go_home_var.get():
                 # Go Home if the checkbox is checked
                 measurement_controller.motor_controller.move_to_angle(0)
-                print(">>>>Moved to 0 Deg")
+                print(">>>Moved to 0 Deg")
 
         except Exception as e:
             print(f"An error occurred: {e}")
