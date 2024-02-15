@@ -30,11 +30,13 @@ class App:
 
         # Set up GUI components
         self.create_widgets()
-        # self.update_current_info()
+        self.update_current_info()
+
+        self.experiment_name = "" 
 
         # Redirect stdout and stderr to the ScrolledText widget
-        sys.stdout = TextRedirector(self.terminal_text, "stdout")
-        sys.stderr = TextRedirector(self.terminal_text, "stderr")
+        # sys.stdout = TextRedirector(self.terminal_text, self.experiment_name_entry.get(), "stdout")
+        # sys.stderr = TextRedirector(self.terminal_text, self.experiment_name_entry.get(), "stderr")
 
 
     def create_widgets(self):
@@ -103,9 +105,11 @@ class App:
         frame3 = ttk.Frame(container_frame, padding="5", name="frame3", borderwidth=2, relief="groove")
         frame3.grid(row=0, column=2, padx=10, pady=10, sticky="nsew")
 
-        ttk.Label(frame3, text="Sample name:").grid(row=0, column=0, padx=5, pady=5, sticky=tk.E)
+        ttk.Label(frame3, text="").grid(row=0, column=0, padx=5, pady=5, sticky=tk.E)
         self.experiment_name_entry = ttk.Entry(frame3,width=10)
-        self.experiment_name_entry.grid(row=0, column=1, padx=5, pady=5)
+        self.experiment_name_entry.grid(row=0, column=0, padx=5, pady=5)
+
+        ttk.Button(frame3, text="Set Sample name", command=self.start).grid(row=0, column=1, padx=5, pady=5)
 
         ttk.Button(frame3, text="Live", command=self.live_spectrum).grid(row=1, column=0, pady=5)
         ttk.Button(frame3, text="Save Live", command=self.stop_live_spectrum).grid(row=1, column=1, padx=(5, 5), pady=5)
@@ -183,7 +187,7 @@ class App:
         self.current_velocity_label.config(text=f"{current_velocity:.2f} deg/s")
         self.current_angle_label.config(text=f"{current_angle:.2f} degrees")
         self.current_acceleration_label.config(text=f"{current_acceleration:.2f} deg/s^2")
-        
+
         # Schedule the update after a short delay
         self.root.after(500, self.update_current_info)
 
@@ -214,6 +218,14 @@ class App:
         self.motor_controller.inst.velocity_max(25)
         self.motor_controller.move_to_angle(0)
 
+    def start(self):
+                # Set the experiment name attribute
+        self.experiment_name = self.experiment_name_entry.get()
+        # Redirect stdout and stderr to the ScrolledText widget
+        sys.stdout = TextRedirector(self.terminal_text, self.experiment_name, "stdout")
+        sys.stderr = TextRedirector(self.terminal_text, self.experiment_name, "stderr")
+
+        
     def start_measurement_thread(self):
         # Start a new thread for the measurement to avoid blocking the main thread
         thread = Thread(target=self.start_measurement)
@@ -482,13 +494,22 @@ class App:
 
 class TextRedirector:
     
-    def __init__(self, widget, experiment_name_entry, tag="stdout"):
+    def __init__(self, widget, experiment_name, tag="stdout", log="log"):
         self.widget = widget
         self.tag = tag
+        self.experiment_name = experiment_name  # Store the experiment name
+        print("Sample Name:", self.experiment_name)
+        if not os.path.exists(log):
+            os.makedirs(log)  # Create the log folder if it doesn't exist
+        self.file_name = os.path.join(log, f"{experiment_name}_{time.strftime('%Y%m%d_%H%M%S')}.txt")        # self.file_name = time.strftime("%Y%m%d_%H%M%S") + ".txt"  # Current timestamp as file name
+        self.file = open(self.file_name, 'a')  # Open the file in append mode
 
     def write(self, str):
         self.widget.insert(tk.END, str, (self.tag,))
         self.widget.see(tk.END)  # Scroll to the end of the text widget
+        self.file.write(str)  # Write the string to the file
+        self.file.flush()
+        # write this to text file
 
     def flush(self):
         pass
