@@ -5,15 +5,11 @@ from matplotlib.ticker import FormatStrFormatter
 import csv
 from sensor import Sensor
 from seabreeze.spectrometers import list_devices, Spectrometer
-from qcodes_contrib_drivers.drivers.Thorlabs.APT import Thorlabs_APT
-from qcodes_contrib_drivers.drivers.Thorlabs.K10CR1 import Thorlabs_K10CR1
 import csv
 import numpy as np
 from matplotlib.widgets import Button
-
-def time_counter(start_time, end_time, operation_name):
-    elapsed_time = end_time - start_time
-    print(f"{operation_name} took {elapsed_time:.2f} seconds")
+from ctypes import *
+import sys
 
 
 class SpectrometerController:
@@ -81,76 +77,12 @@ class SpectrometerController:
         ax.set_ylabel('Intensity')
 
         # Add angle and exposure time information inside the plot
-        info_text = f"Angle: {MeasurementController.current_angle}°\nExp Time: {exposure_time_micros/1000.0} ms"
+        info_text = f"Angle:{MeasurementController.current_angle}° \n Exp Time: {exposure_time_micros/1000.0} ms"
         ax.text(0.98, 0.98, info_text, transform=ax.transAxes, verticalalignment='top', horizontalalignment='right', bbox=dict(boxstyle='round', facecolor='wheat', alpha=1))
 
         plt.savefig(output_plot_filepath, bbox_inches='tight', pad_inches=0.5)
         time.sleep(1.0)
     
-    # def live_spectrum(self, exposure_time_micros):
-    #     if self.spec is None:
-    #         print("Spectrometer not connected. Please connect first.")
-    #         return
-         
-    def live_spectrum(self, exposure_time_micros):
-        if self.spec is None:
-            print("Spectrometer not connected. Please connect first.")
-            return
-
-        try:
-            plt.ion()  # Turn on interactive mode
-            fig, ax = plt.subplots()
-            line, = ax.plot([], [])  # Empty line for the plot
-
-            # Set the labels for the plot
-            ax.set_xlabel('Wavelength (nm)')
-            ax.set_ylabel('Intensity')
-
-            # Define function to handle plot window close event
-            def on_close(event):
-                plt.close(self.fig)  # Close the plot window # Close the plot window
-
-            # Connect the close event of the plot window to the handler
-            # fig.canvas.mpl_connect('close_event', on_close)
-
-            def on_save(event):
-                # Save the data to a file (you need to implement this)
-                # For example, you can use numpy.savetxt to save the data to a text file
-                np.savetxt('BG_spectrometer_data.csv', np.column_stack((wavelengths, intensities)), delimiter=',', header='Wavelength (nm), Intensity', comments='')
-                # Save the plot image
-                fig.savefig('BG_spectrometer_plot.png', bbox_inches='tight', pad_inches=0.5)
-
-            # Add a button outside the plot window for saving data
-            save_button_ax = plt.axes([0.85, 0.01, 0.1, 0.065])
-            save_button = Button(save_button_ax, 'Save')
-            save_button.on_clicked(on_save)
-
-            # Connect the close event of the plot window to the handler
-            fig.canvas.mpl_connect('close_event', on_close)
-
-            live_spectrum_running = True
-            while live_spectrum_running:
-                # Acquire spectrum data
-                
-                wavelengths, intensities = self.spec.spectrum()
-
-                # Update the plot with new data
-                line.set_xdata(wavelengths)
-                line.set_ydata(intensities)
-                ax.relim()  # Update the limits of the axes
-                ax.autoscale_view()  # Auto-scale the axes
-                fig.canvas.draw()  # Redraw the plot
-                fig.canvas.flush_events()  # Flush the GUI events to update the plot
-
-                time.sleep(exposure_time_micros / 1e6)  # Wait for exposure time
-
-        except Exception as e:
-            print(f"An error occurred during live spectrum measurement: {e}")
-
-        finally:
-            # Close the spectrometer when finished
-            self.spec.close()
-        
     def close_plot(self):
         if self.fig is not None:
             plt.close(self.fig)
@@ -159,40 +91,89 @@ class SpectrometerController:
         if self.spec is not None:
             self.spec.close()
 
-
-class MotorController:
+class ThorlabsMotionController:
     def __init__(self):
-        try:
-            self.apt = Thorlabs_APT()
-            self.inst = Thorlabs_K10CR1("K10CR1", 0, self.apt)
-            self.inst.velocity_max(25)
-            self.inst._set_velocity_acceleration(25)
-            # self.inst._set_velocity_acceleration(25)
-        except Exception as e:
-            print(f"Failed to initialize motor controller: {e}")
-            self.apt = None
-            self.inst = None
-    
-    
+        self.lib = None
+        self.serial_num = c_char_p(b"55357574")
+        self.STEPS_PER_REV = c_double(136533)  # for the K10CR1
+        self.gbox_ratio = c_double(1.0)  # gearbox ratio
+        self.pitch = c_double(1.0)
+        self.dll_path = r"C:\Program Files\Thorlabs\Kinesis"
+        print("Initializing Thorlabs Motion Controller")
+
+        if sys.version_info < (3, 8):
+            os.chdir(self.dll_path)
+        else:
+            os.add_dll_directory(self.dll_path)
+
+        self.lib = cdll.LoadLibrary("Thorlabs.MotionControl.KCube.DCServo.dll")
+
+    def open_device(self):
+        if self.lib.TLI_BuildDeviceList() == 0:
+            self.lib.CC_Open(self.serial_num)
+            # print("ND filter Connected")
+            self.lib.CC_StartPolling(self.serial_num, c_int(200))
+
+    def close_device(self):
+        self.lib.CC_StopPolling(self.serial_num)
+        self.lib.CC_Close(self.serial_num)
+
     def move_home(self):
-        if hasattr(self.inst, 'velocity_max'):
-            self.inst.velocity_max(25) # Set velocity to 0 before cleanup
-        self.inst.velocity_max(25)
-        self.inst.move_home()
+        self.open_device()
+        self.lib.CC_MoveToPosition(self.serial_num, 0)
+        self.lib.CC_SetHomingVelocity(self.serial_num, 7329109 * 50)
+        time.sleep(0.25)
+        self.lib.CC_Home(self.serial_num)
+        time.sleep(0.25)
+        self.close_device()
 
-    def configure_motor(self, target_velocity):
-        if hasattr(self.inst, 'velocity_max'):
-            self.inst.velocity_max(0) # Set velocity to 0 before cleanup
-        self.inst.velocity_max(25)
+    def current_position(self):
+        self.open_device()
+        self.lib.CC_RequestPosition(self.serial_num)
+        time.sleep(0.1)
+        current_position = self.lib.CC_GetPosition(self.serial_num)
+        self.close_device()
+        return current_position/136533
 
+    def delaytime(self,angle):
+        self.open_device()
+        self.lib.CC_RequestPosition(self.serial_num)
+        time.sleep(0.1)
+        current=(self.lib.CC_GetPosition(self.serial_num)/self.STEPS_PER_REV.value)
+        # print("Current Position: ",current)
+        # if angle == 0:
+        #     delay=1
+        #     print("Delay: ",delay)
+        # else :
+        delay= (abs(angle - current ))/25
+        delay=delay+1
+        print("Delay: ",delay)
+        self.close_device()
+        return delay
+    
     def move_to_angle(self, angle):
-        self.inst.position(angle)
+        self.open_device()
+        steps = int(angle * self.STEPS_PER_REV.value)
+        self.lib.CC_MoveToPosition(self.serial_num, steps)
+        CC_SetVelParams = self.lib.CC_SetVelParams
+        CC_SetVelParams.argtypes = [c_char_p, c_int, c_int]
+        CC_SetVelParams.restype = c_short
+        acceleration_value = 1502*25
+        max_velocity_value = 25*7329109
+        self.lib.CC_SetVelParams(self.serial_num, acceleration_value, max_velocity_value)
+        self.close_device()
 
-    def close_motor(self):
-        if hasattr(self.inst, 'velocity_max'):
-            self.inst.velocity_max(0)  # Set velocity to 0 before cleanup
-        self.inst.close()
-        self.apt.apt_clean_up()
+    def jog_move(self, steps):
+        self.open_device()
+        self.lib.CC_ClearMessageQueue(self.serial_num)
+        print("Moving by {} steps".format(steps))
+        self.lib.CC_MoveRelative(self.serial_num, int(steps * self.STEPS_PER_REV.value))
+        self.lib.CC_SetHomingVelocity(self.serial_num, 7329109 * 50)
+        self.lib.CC_RequestPosition(self.serial_num)
+        time.sleep(0.1)
+        print("Current position:", self.lib.CC_GetPosition((self.serial_num)/self.STEPS_PER_REV.value))
+        self.close_device()
+
 
 class MeasurementController:
     def __init__(self, spectrometer_controller, motor_controller, experiment_name):
@@ -220,13 +201,13 @@ class MeasurementController:
             current_angle_normalized = current_angle % 360
 
             self.motor_controller.move_to_angle(current_angle_normalized)
-            current_position = self.motor_controller.inst.position()
+            current_position = self.motor_controller.current_position()
             # time.sleep(0.5)  # Pause the execution for 0.5 seconds
-            print(f"Position: {current_position} degrees at angle: {current_angle_normalized} degrees")
+            print(f"Position: {current_position} degrees at angle")
             time.sleep(delay_seconds)
 
             # Update the class variable
-            MeasurementController.current_angle = current_angle_normalized
+            # MeasurementController.current_angle = current_angle_normalized
 
             self.power_meter.connect()
             # time.sleep(0.1)
@@ -279,7 +260,7 @@ class MeasurementController:
         # Move to the final angle after completing the loop
         final_angle_normalized = final_angle % 360
         self.motor_controller.move_to_angle(final_angle_normalized)
-        final_position = self.motor_controller.inst.position()
+        final_position = self.motor_controller.current_position()
         print(f"Final Position: {final_position} degrees")
         print(angle_power_list)
         # Save the angle-power list to a CSV file
@@ -306,29 +287,31 @@ class MeasurementController:
             # Convert the angle to be within the range [0, 360)
             current_angle_normalized = current_angle % 360
 
+            delay=self.motor_controller.delaytime(current_angle_normalized)
             self.motor_controller.move_to_angle(current_angle_normalized)
-            current_position = self.motor_controller.inst.position()
+            time.sleep(delay)
+
+            current_position = self.motor_controller.current_position()
             # time.sleep(0.5)  # Pause the execution for 0.5 seconds
-            print(f"Position: {current_position} degrees at angle: {current_angle_normalized} degrees")
-            time.sleep(delay_seconds)
+            print(f"Position: {current_position} degrees at angle")
+            # time.sleep(delay_seconds)
 
             # Update the class variable
-            MeasurementController.current_angle = current_angle_normalized
+            MeasurementController.current_angle = current_position
 
-            self.current_csv_filename = f'{self.experiment_name}_spec_{int(current_angle_normalized)}deg_{int(exposure_time_micros/1000.0)}ms_acc_{num_accumulations}.csv'
+            self.current_csv_filename = f'{self.experiment_name}_spec_{int(current_position)}deg_{int(exposure_time_micros/1000.0)}ms_acc_{num_accumulations}.csv'
             self.spectrometer_controller.perform_accumulation(num_accumulations, exposure_time_micros, self.current_csv_filename,save_dir)
-            
             current_angle += step_size
 
         # Move to the final angle after completing the loop
         final_angle_normalized = final_angle % 360
         self.motor_controller.move_to_angle(final_angle_normalized)
-        final_position = self.motor_controller.inst.position()
+        final_position = self.motor_controller.current_position()
         print(f"Final Position: {final_position} degrees")
 
 def main():
     spectrometer_controller = SpectrometerController()
-    motor_controller = MotorController()
+    motor_controller = ThorlabsMotionController()
 
     # Move to zero and recalibrate
     # do you want to go home 
@@ -346,10 +329,6 @@ def main():
         # Convert milliseconds to microseconds
         exposure_time_micros = exposure_time_ms * 1000.0
         delay_seconds = 0.5
-
-        # Take target velocity from the user
-        target_velocity = 25
-        # motor_controller.configure_motor(target_velocity=target_velocity)
 
         # Create measurement controller
         measurement_controller = MeasurementController(spectrometer_controller, motor_controller,experiment_name)
@@ -374,7 +353,7 @@ def main():
     finally:
         # Close both spectrometer and motor controller
         spectrometer_controller.disconnect_spectrometer()
-        motor_controller.close_motor()
+      
 
 
 if __name__ == "__main__":

@@ -3,3 +3,14 @@ __pycache__/
 
 #ignore experiment results
 experiment_data/
+
+#ignore logs
+logs/
+
+/2202/
+
+/22022024/
+
+/emek01/
+
+/test2202/
