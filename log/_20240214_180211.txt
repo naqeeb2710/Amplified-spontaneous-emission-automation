@@ -1,3 +1,0 @@
-Experiment Name: 
-Live spectrum started
-<SeaBreezeDevice HR4000:HR4C222> for live spectrum

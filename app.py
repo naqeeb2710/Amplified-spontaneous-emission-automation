@@ -213,9 +213,10 @@ class App:
     def start(self):
                 # Set the experiment name attribute
         self.experiment_name = self.experiment_name_entry.get()
+        save_dir = filedialog.askdirectory()
         # Redirect stdout and stderr to the ScrolledText widget
-        sys.stdout = TextRedirector(self.terminal_text, self.experiment_name, "stdout")
-        sys.stderr = TextRedirector(self.terminal_text, self.experiment_name, "stderr")
+        sys.stdout = TextRedirector(self.terminal_text, self.experiment_name, save_dir, "stdout")
+        sys.stderr = TextRedirector(self.terminal_text, self.experiment_name, save_dir,"stderr")
 
     def start_measurement(self):
         try:
@@ -495,15 +496,17 @@ class App:
 
 class TextRedirector:
     
-    def __init__(self, widget, experiment_name, tag="stdout", log="log"):
+    def __init__(self, widget, experiment_name, save_dir, tag="stdout", log="log"):
         self.widget = widget
         self.tag = tag
         self.experiment_name = experiment_name  # Store the experiment name
+        self.save_dir = save_dir 
         print("Sample Name:", self.experiment_name)
-        if not os.path.exists(log):
-            os.makedirs(log)  # Create the log folder if it doesn't exist
-        self.file_name = os.path.join(log, f"{experiment_name}_{time.strftime('%Y%m%d_%H%M%S')}.txt")        # self.file_name = time.strftime("%Y%m%d_%H%M%S") + ".txt"  # Current timestamp as file name
+        log_dir = os.path.join(save_dir, log)  # Construct the log directory path
+        os.makedirs(log_dir, exist_ok=True)  # Create the log directory if it doesn't exist
+        self.file_name = os.path.join(log_dir, f"{experiment_name}_{time.strftime('%Y%m%d_%H%M%S')}.txt")        
         self.file = open(self.file_name, 'a')  # Open the file in append mode
+
 
     def write(self, str):
         self.widget.insert(tk.END, str, (self.tag,))

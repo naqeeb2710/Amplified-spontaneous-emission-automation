@@ -1,0 +1,9 @@
+Sample Name: ddd
+Live spectrum started
+No spectrometer devices available.
+Traceback (most recent call last):
+  File "C:\Users\naqee\Desktop\ASE\app.py", line 524, in <module>
+    root.mainloop()
+  File "C:\Users\naqee\AppData\Local\Programs\Python\Python310\lib\tkinter\__init__.py", line 1458, in mainloop
+    self.tk.mainloop(n)
+KeyboardInterrupt
