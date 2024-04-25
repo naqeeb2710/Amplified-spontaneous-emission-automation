@@ -185,6 +185,28 @@ class MeasurementController:
         self.default_measurement_range = 3  # Default measurement range is 20.0nJ
         self.threshold_status_count = 5  # Threshold for status count
 
+    def PowerCalibaration(self):
+        self.motor_controller.move_to_angle(0)
+        self.power_meter.connect()
+        self.power_meter.arm()
+        default_measurement_range = self.default_measurement_range
+        self.power_meter.measurement_range = default_measurement_range
+        power_data, totalpower, numevent = self.power_meter.disarm()
+        if power_data:
+            return default_measurement_range
+        else:
+            self.power_meter.measurement_range-1
+            power_data, totalpower, numevent = self.power_meter.disarm()
+            if power_data:
+                return default_measurement_range-1
+            else:
+                self.power_meter.measurement_range = 1
+                power_data, totalpower, numevent = self.power_meter.disarm()
+                if power_data:
+                    return 1
+                else:
+                    return 0
+
     def measure_power_at_angles(self, initial_angle, final_angle,step_size, delay_seconds):
         current_angle = initial_angle
         angle_power_list = []  # Initialize an empty list to store angle-power pairs
