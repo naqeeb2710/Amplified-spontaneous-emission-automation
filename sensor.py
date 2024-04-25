@@ -111,46 +111,4 @@ class Sensor:
             self.OphirCOM.CloseAll()
             self.OphirCOM = None
 
-# Function to test the sensor
-# def main():
-#     import time
-    
-#     # Create an instance of the Sensor class
-#     Start_time = time.time()
-#     sensor = Sensor()
-    
-#     # Connect to the sensor
-#     if sensor.connect():
-#         print("Sensor connected successfully.")
-        
-#         # Arm the sensor
-#         if sensor.arm():
-#             print("Sensor armed successfully.")
-            
-#             # Disarm the sensor and get events
-#             events = sensor.disarm()
-#             if events:
-#                 print("Events recorded:")
-#                 with open('dump.csv', 'w') as dump:
-#                     # Write header
-#                     dump.write('time, power, status\n')
-                    
-#                     # Write data rows
-#                     for event in events:
-#                         dump.write('%.3f, %.2e, %.2f\n' % (event[0], event[1], event[2]))
-
-#                 print('File written')
-
-#             else:
-#                 print("No events recorded.")
-#         else:
-#             print("Failed to arm the sensor.")
-#     else:
-#         print("Failed to connect to the sensor.")
-    
-#     # Print the total time taken
-#     print(f"Total time: {time.time() - Start_time}s")
-
-# if __name__ == "__main__":
-#     main()
 

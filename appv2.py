@@ -35,8 +35,8 @@ class App:
         self.experiment_name = "" 
 
         # Redirect stdout and stderr to the ScrolledText widget
-        # sys.stdout = TextRedirector(self.terminal_text, self.experiment_name_entry.get(), "stdout")
-        # sys.stderr = TextRedirector(self.terminal_text, self.experiment_name_entry.get(), "stderr")
+        sys.stdout = TextRedirector(self.terminal_text, self.experiment_name_entry.get(), "stdout")
+        sys.stderr = TextRedirector(self.terminal_text, self.experiment_name_entry.get(), "stderr")
 
 
     def create_widgets(self):
@@ -175,19 +175,6 @@ class App:
         angle = float(self.move_to_angle_entry.get())%360
         self.motor_controller.move_to_angle(angle)
         self.motor_controller.close_device()
-
-    # def update_current_info(self):
-    # # Method to update the current velocity and angle labels
-    #     current_velocity = self.motor_controller.inst._get_velocity_max()
-    #     current_angle = self.motor_controller.inst.position()
-    #     current_acceleration = self.motor_controller.inst._get_velocity_acceleration()
-
-    #     self.current_velocity_label.config(text=f"{current_velocity:.2f} deg/s")
-    #     self.current_angle_label.config(text=f"{current_angle:.2f} degrees")
-    #     self.current_acceleration_label.config(text=f"{current_acceleration:.2f} deg/s^2")
-
-    #     # Schedule the update after a short delay
-    #     self.root.after(500, self.update_current_info)
 
     def up_angle(self):
         # Implement the logic for increasing the angle
@@ -338,19 +325,15 @@ class App:
                 measurement_controller.power_meter.arm(delay_seconds=power_delay)
                 power_data, totalpower, numevent = measurement_controller.power_meter.disarm()  # Unpack the tuple to get power data and average power
                 if power_data:
-                    print('A')
                     print("Power data recorded:")
                     power_meter_filename = os.path.join(save_dir, f'{experiment_name}_power_{int(angle)}deg.csv')
                     with open(power_meter_filename, 'w') as power_dump:
-                        print('A2')
                         # Write header
                         power_dump.write('time, power, status\n')
                         # Write data rows
                         for event in power_data:
-                            print('A3')
                             power_dump.write('%.3f, %.2e, %.2f\n' % (event[0], event[1], event[2]))
-                            if measurement_controller.power_meter.measurement_range != 0:  # Check if not already in 200nJ range
-                                print('AA')
+                            if measurement_controller.power_meter.measurement_range != 0:  
                                 if event[2] == 1:  # Check if data indicates status change
                                     status_counter += 1
                                     print('status counter = ', status_counter)
@@ -382,7 +365,7 @@ class App:
                 # Check if status counter exceeds threshold
                 if status_counter > measurement_controller.threshold_status_count:
                     print('C',measurement_range)
-                    measurement_range = measurement_range-1  # Change to 200nJ range
+                    measurement_range = measurement_range-1  
                     print("Range Changed",measurement_range)
                     measurement_controller.power_meter.measurement_range = measurement_range
                     status_counter = 0  # Reset status counter after changing the range
