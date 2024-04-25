@@ -193,18 +193,22 @@ class MeasurementController:
         self.power_meter.measurement_range = default_measurement_range
         power_data, totalpower, numevent = self.power_meter.disarm()
         if power_data:
+            print("Power Calibrated")
             return default_measurement_range
         else:
             self.power_meter.measurement_range-1
             power_data, totalpower, numevent = self.power_meter.disarm()
             if power_data:
+                print("Power Calibrated")
                 return default_measurement_range-1
             else:
                 self.power_meter.measurement_range = 1
                 power_data, totalpower, numevent = self.power_meter.disarm()
                 if power_data:
+                    print("Power Calibrated")
                     return 1
                 else:
+                    print("Power Calibrated")
                     return 0
 
     def measure_power_at_angles(self, initial_angle, final_angle,step_size, delay_seconds):
