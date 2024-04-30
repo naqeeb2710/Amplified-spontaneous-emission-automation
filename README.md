@@ -44,7 +44,6 @@ Welcome to the Amplified spontaneous emission (ASE) Automation Setup Guide. This
 - matplotlib==3.5.2
 - numpy==1.22.0
 - pywin32==304
-- qcodes_contrib_drivers==0.18.0
 - seabreeze==2.4.0
 ###### Note: The required packages are already listed in the requirements.txt file.
 
@@ -76,15 +75,13 @@ Welcome to the Amplified spontaneous emission (ASE) Automation Setup Guide. This
 
 ## Addtional Resoures
 
-1. **Learn More About QCoDeS Contrib Drivers:**
-   - [QCoDeS Contrib Drivers Documentation](https://qcodes.github.io/Qcodes_contrib_drivers/index.html).
 
-2. **Explore Thorlabs K10CR1 Example:**
-   - [Thorlabs K10CR1 Example](https://qcodes.github.io/Qcodes_contrib_drivers/examples/Thorlabs_K10CR1.html).
+1. **Explore Thorlabs K10CR1 Example:**
+   - [Thorlabs K10CR1 Example](https://github.com/Thorlabs/Motion_Control_Examples/tree/main/Python/KCube/KDC101).
 
-3. **Read Python Seabreeze Documentation:**
+2. **Read Python Seabreeze Documentation:**
    - [Python Seabreeze Documentation](https://python-seabreeze.readthedocs.io/en/latest/).
 
-## Known Issues
-- Sometime Thorlab KC10CR1 rotation stage does not move to the Home (0 deg) angle. In this case, you need to restart the application and replug the wheel then try again.
+3. **Learn More About Starbright Power Meter:**
+   - [Starbright Power Meter](https://www.ophiropt.com/en/g/starlab-for-usb).
 

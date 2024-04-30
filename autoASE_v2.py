@@ -19,7 +19,7 @@ from datetime import datetime
 class App:
     def __init__(self, root):
         self.root = root
-        self.root.title("Amplified Spontaneous Emission Measurement App")
+        self.root.title("autoASE")
 
         # Initialize controllers
         # self.spectrometer_controller = SpectrometerController()
