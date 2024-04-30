@@ -154,17 +154,17 @@ class App:
         info_labels_frame.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
 
         # Create labels for current velocity, acceleration, and angle
-        ttk.Label(info_labels_frame, text="Current Velocity:").grid(row=0, column=0, padx=5, pady=5, sticky="e")
-        self.current_velocity_label = ttk.Label(info_labels_frame, text="0 deg/s")
-        self.current_velocity_label.grid(row=0, column=1, padx=5, pady=5, sticky="w")
+        ttk.Label(info_labels_frame, text="Developed by Naqeeb Ahmed").grid(row=15, column=0, padx=5, pady=5)
+        self.current_velocity_label = ttk.Label(info_labels_frame, text="naqeeb2710@gmail.com")
+        self.current_velocity_label.grid(row=15, column=1, padx=5, pady=5)
 
-        ttk.Label(info_labels_frame, text="Current Acceleration:").grid(row=1, column=0, padx=5, pady=5, sticky="e")
-        self.current_acceleration_label = ttk.Label(info_labels_frame, text="0 deg/s^2")
-        self.current_acceleration_label.grid(row=1, column=1, padx=5, pady=5, sticky="w")
+        ttk.Label(info_labels_frame, text="GitHub - naqeeb2710").grid(row=16, column=0, padx=5, pady=5)
+        self.current_acceleration_label = ttk.Label(info_labels_frame, text="March 2024")
+        self.current_acceleration_label.grid(row=16, column=1, padx=5, pady=5)
 
-        ttk.Label(info_labels_frame, text="Current Angle:").grid(row=2, column=0, padx=5, pady=5, sticky="e")
-        self.current_angle_label = ttk.Label(info_labels_frame, text="0 degrees")
-        self.current_angle_label.grid(row=2, column=1, padx=5, pady=5, sticky="w")
+        # ttk.Label(info_labels_frame, text="Current Angle:").grid(row=2, column=0, padx=5, pady=5, sticky="e")
+        # self.current_angle_label = ttk.Label(info_labels_frame, text="0 degrees")
+        # self.current_angle_label.grid(row=9, column=1, padx=5, pady=5, sticky="w")
 
         # Create a scrolled text widget to display terminal information
         self.terminal_text = scrolledtext.ScrolledText(info_labels_frame, wrap=tk.WORD, width=30, height=20)
